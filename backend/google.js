@@ -17,7 +17,7 @@ router.post("/web_hook", async (req, res) => {
   res.sendStatus(204);
 });
 
-router.get("/oauth_callback", require("./context"), async (req, res) => {
+router.get("/oauth_callback", require("./context").adminContext, async (req, res) => {
   if (req.query.error === "access_denied") {
     return res.redirect("/");
   }
@@ -40,10 +40,7 @@ router.get("/oauth_callback", require("./context"), async (req, res) => {
     return res.redirect(req.context.calendarProviders.google.getAuthUrl(true));
   }
 
-  await req.context.storage.session.updateSession(req.context.session.token, {
-    userId: tokens.userId,
-    scope: "admin"
-  });
+  await req.context.storage.session.updateSession(req.context.session.token, { adminUserId: tokens.userId });
 
   res.redirect(`/admin`);
 });

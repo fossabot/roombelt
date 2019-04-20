@@ -2,7 +2,7 @@ import React from "react";
 import i18next from "i18next";
 import { withRouter } from "react-router";
 import { Route, Switch } from "react-router-dom";
-import { getAuth } from "./services/api";
+import { getUserDetails } from "./services/api";
 
 import FatalError from "./theme/layouts/FatalError";
 import LoginApp from "./apps/login/Login";
@@ -16,9 +16,9 @@ class Login extends React.PureComponent {
 
 class Admin extends React.PureComponent {
   async componentDidMount() {
-    const { scope, isAccessTokenValid } = await getAuth();
-
-    if (scope !== "admin" || !isAccessTokenValid) {
+    try {
+      await getUserDetails();
+    } catch (error) {
       window.location = "/";
     }
   }

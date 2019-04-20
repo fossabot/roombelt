@@ -1,7 +1,8 @@
 const router = require("express-promise-router")();
+const context = require("./context");
 
-router.get("/oauth_callback", require("./context"), async (req, res) => {
-  if (req.query.error === "access_denied") {
+router.get("/oauth_callback", context.adminContext, async (req, res) => {
+  if (req.query.error) {
     return res.redirect("/");
   }
 
@@ -17,15 +18,12 @@ router.get("/oauth_callback", require("./context"), async (req, res) => {
 
   await req.context.storage.oauth.saveTokens(tokens);
 
-  await req.context.storage.session.updateSession(req.context.session.token, {
-    userId: tokens.userId,
-    scope: "admin"
-  });
+  await req.context.storage.session.updateSession(req.context.session.token, { adminUserId: tokens.userId });
 
   return res.redirect("/office365/check_access");
 });
 
-router.get("/oauth_callback_admin", require("./context"), async (req, res) => {
+router.get("/oauth_callback_admin", context.adminContext, async (req, res) => {
   if (req.query && req.query["admin_consent"] === "True" && !req.query["error"]) {
     for (let i = 0; i < 10; i++) {
       if (await req.context.calendarProviders.office365.isAccessTokenValid()) {
@@ -40,11 +38,12 @@ router.get("/oauth_callback_admin", require("./context"), async (req, res) => {
   return res.redirect("/?error=office365_login_error");
 });
 
-router.get("/check_access", require("./context"), async (req, res) => {
+router.get("/check_access", context.adminContext, async (req, res) => {
   if (!await req.context.calendarProviders.office365.isAccessTokenValid()) {
     return res.redirect(req.context.calendarProviders.office365.getAdminAuthUrl());
   }
 
   return res.redirect("/admin");
 });
+
 module.exports = router;

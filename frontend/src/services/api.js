@@ -5,19 +5,15 @@ axios.interceptors.response.use(response => response.data);
 
 export async function isOnline() {
   try {
-    await getAuth();
+    await getApiVersion();
     return true;
   } catch (err) {
     return false;
   }
 }
 
-export function removeAuth() {
-  return axios.delete("/api/auth");
-}
-
-export function getAuth() {
-  return axios.get("/api/auth");
+export function getAuthUrls() {
+  return axios.get("/api/admin/auth_urls");
 }
 
 export function getApiVersion() {
@@ -25,7 +21,11 @@ export function getApiVersion() {
 }
 
 export function createDevice() {
-  return axios.put("/api/auth/device");
+  return axios.post("/api/device");
+}
+
+export function removeDevice() {
+  return axios.delete("/api/device");
 }
 
 export function getUserDetails() {

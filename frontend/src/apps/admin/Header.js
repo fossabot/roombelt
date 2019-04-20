@@ -63,7 +63,7 @@ const Header = props => {
           Subscription settings
         </DropdownMenuItem>}
         <DropdownMenuItem as="a" href="https://docs.roombelt.com">Help</DropdownMenuItem>
-        <DropdownMenuItem as="a" href="/logout">Log out</DropdownMenuItem>
+        <DropdownMenuItem as="a" href="/api/admin/logout">Log out</DropdownMenuItem>
       </DropdownMenu>
     </Wrapper>
   );

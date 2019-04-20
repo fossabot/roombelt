@@ -4,9 +4,8 @@ module.exports = class {
   constructor(sequelize) {
     this.Model = sequelize.define("login", {
       token: { type: Sequelize.UUID, defaultValue: Sequelize.UUIDV4 },
-      scope: { type: Sequelize.STRING, defaultValue: "none" },
-      userId: Sequelize.STRING,
-      deviceId: Sequelize.STRING
+      adminUserId: Sequelize.STRING,          // Used only for admin sessions
+      deviceId: Sequelize.STRING              // Used only for device sessions
     });
   }
 

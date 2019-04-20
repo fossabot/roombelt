@@ -1,14 +1,33 @@
 const router = require("express-promise-router")();
 const Moment = require("moment");
+
+const context = require("../context");
 const logger = require("../logger");
 
 const getTimestamp = time => time.isTimeZoneFixedToUTC && Moment.utc(time).valueOf();
 
+router.use("/device", context.deviceContext);
+
+router.post("/device", async function(req, res) {
+  if (!req.context.session.deviceId) {
+    const { deviceId } = await req.context.storage.devices.createDevice();
+    await req.context.storage.session.updateSession(req.context.session.token, { deviceId });
+  }
+
+  res.sendStatus(200);
+});
+
+router.delete("/device", async (req, res) => {
+  await req.context.storage.devices.removeDevice(req.context.session.deviceId);
+  await req.context.removeSession(req, res);
+  res.sendStatus(204);
+});
+
 router.use("/device", async function(req, res) {
   logger.debug(`Device ID ${req.context.session.deviceId}`);
 
-  if (req.context.session.scope !== "device") {
-    logger.error(`Invalid session scope: ${req.context.session.scope} for device ${req.context.session.deviceId}`);
+  if (!req.context.session.deviceId) {
+    logger.error(`Missing Device ID`);
     return res.sendStatus(403);
   }
 
@@ -20,7 +39,7 @@ router.use("/device", async function(req, res) {
   }
 
   if (req.context.subscriptionStatus && req.context.subscriptionStatus.areDevicesBlocked) {
-    logger.info(`Invalid subscription. User: ${req.context.session.userId}. Device: ${req.context.session.deviceId}`);
+    logger.info(`Invalid subscription. User: ${req.context.device.userId}. Device: ${req.context.session.deviceId}`);
     return res.sendStatus(402);
   }
 
@@ -49,7 +68,7 @@ async function getCalendarInfo(calendarId, calendarProvider) {
 }
 
 async function getUserCalendars(req) {
-  const devices = await req.context.storage.devices.getDevicesForUser(req.context.session.userId);
+  const devices = await req.context.storage.devices.getDevicesForUser(req.context.device.userId);
   const calendarIds = devices
     .map(device => device.deviceType === "calendar" && device.calendarId)
     .filter(calendarId => calendarId);
@@ -89,7 +108,7 @@ router.use("/device/meeting", (req, res, next) => (req.context.device.calendarId
 
 router.post("/device/meeting", async function(req, res) {
   if (req.body.calendarId) {
-    const devices = await req.context.storage.devices.getDevicesForUser(req.context.session.userId);
+    const devices = await req.context.storage.devices.getDevicesForUser(req.context.device.userId);
     const device = devices.find(device => device.deviceType === "calendar" && device.calendarId === req.body.calendarId);
 
     if (!device) {

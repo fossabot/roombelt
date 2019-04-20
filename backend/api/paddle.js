@@ -1,8 +1,9 @@
 const router = require("express-promise-router")();
 const paddle = require("../services/paddle");
 const logger = require("../logger");
+const context = require("../context");
 
-router.post("/paddle", async (req, res) => {
+router.post("/paddle", context.emptyContext, async (req, res) => {
   if (!paddle.verifyPaddleAlert(req.body)) {
     return res.sendStatus(400);
   }

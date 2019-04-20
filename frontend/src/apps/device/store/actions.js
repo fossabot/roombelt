@@ -5,7 +5,7 @@ import axios from "axios";
 import ms from "ms";
 
 import * as api from "services/api";
-import { createDevice, getDeviceDetails, removeAuth } from "services/api";
+import { createDevice, getDeviceDetails, removeDevice } from "services/api";
 
 import {
   calendarNameSelector,
@@ -173,7 +173,7 @@ export const deviceActions = {
   $setIsSubscriptionCancelled: action(isSubscriptionCancelled => ({ isSubscriptionCancelled })),
   $markRemoved: action(),
   disconnectDevice: () => async () => {
-    await removeAuth();
+    await removeDevice();
     window.location.reload();
   },
 

@@ -1,6 +1,7 @@
 const router = require("express-promise-router")();
 const Moment = require("moment");
 
+const context = require("../context");
 const logger = require("../logger");
 const paddle = require("../services/paddle");
 
@@ -32,8 +33,20 @@ const userRepresentation = ({ createdAt, provider, subscriptionPassthrough, subs
   properties
 });
 
+router.use("/admin", context.adminContext);
+
+router.get("/admin/auth_urls", (req, res) => res.json({
+  google: req.context.calendarProviders.google.getAuthUrl(),
+  office365: req.context.calendarProviders.office365.getAuthUrl()
+}));
+
+router.get("/admin/logout", async (req, res) => {
+  await req.context.removeSession(req, res);
+  res.redirect("/?info=logout");
+});
+
 router.use("/admin", async function(req, res) {
-  if (req.context.session.scope !== "admin") {
+  if (!req.context.session.adminUserId) {
     return res.sendStatus(403);
   }
 
@@ -49,9 +62,9 @@ async function checkSubscription(req, res) {
 }
 
 router.get("/admin/user", async function(req, res) {
-  const userOAuth = await req.context.storage.oauth.getByUserId(req.context.session.userId);
+  const userOAuth = await req.context.storage.oauth.getByUserId(req.context.session.adminUserId);
   const userDetails = await req.context.calendarProvider.getUserDetails();
-  const userProperties = await req.context.storage.userProperties.getProperties(req.context.session.userId);
+  const userProperties = await req.context.storage.userProperties.getProperties(req.context.session.adminUserId);
 
   const getTrialEnd = () => {
     if (!req.context.subscriptionStatus || userOAuth.subscriptionPlanId) {
@@ -78,7 +91,7 @@ router.get("/admin/user", async function(req, res) {
 });
 
 router.put("/admin/user/property/:propertyId", async function(req, res) {
-  await req.context.storage.userProperties.setProperty(req.context.session.userId, req.params.propertyId, req.body);
+  await req.context.storage.userProperties.setProperty(req.context.session.adminUserId, req.params.propertyId, req.body);
   res.sendStatus(204);
 });
 
@@ -87,7 +100,7 @@ router.get("/admin/calendar", async function(req, res) {
 });
 
 router.get("/admin/device", async function(req, res) {
-  const devices = await req.context.storage.devices.getDevicesForUser(req.context.session.userId);
+  const devices = await req.context.storage.devices.getDevicesForUser(req.context.session.adminUserId);
   res.json(devices.map(deviceRepresentation));
 });
 
@@ -100,13 +113,7 @@ router.post("/admin/device", checkSubscription, async function(req, res) {
 
   console.log("connecting device: " + device.deviceId);
 
-  const deviceSession = await req.context.storage.session.getSessionForDevice(device.deviceId);
-  const userId = req.context.session.userId;
-
-  await Promise.all([
-    req.context.storage.devices.connectDevice(device.deviceId, userId),
-    req.context.storage.session.updateSession(deviceSession.token, { userId })
-  ]);
+  await req.context.storage.devices.connectDevice(device.deviceId, req.context.session.adminUserId);
 
   res.json(deviceRepresentation(device));
 });
@@ -114,7 +121,7 @@ router.post("/admin/device", checkSubscription, async function(req, res) {
 router.put("/admin/device/:deviceId", checkSubscription, async function(req, res) {
   const device = await req.context.storage.devices.getDeviceById(req.params.deviceId);
 
-  if (!device || device.userId !== req.context.session.userId) {
+  if (!device || device.userId !== req.context.session.adminUserId) {
     res.status(404).send(`No device with id ${req.params.deviceId}`);
   }
 
@@ -142,15 +149,15 @@ router.put("/admin/device/:deviceId", checkSubscription, async function(req, res
 router.delete("/admin/device/:deviceId", checkSubscription, async function(req, res) {
   const device = await req.context.storage.devices.getDeviceById(req.params.deviceId);
 
-  if (device && device.userId === req.context.session.userId) {
-    await req.context.storage.devices.removeDevice(req.params.deviceId, req.context.session.userId);
+  if (device && device.userId === req.context.session.adminUserId) {
+    await req.context.storage.devices.removeDevice(req.params.deviceId, req.context.session.adminUserId);
   }
 
   res.sendStatus(204);
 });
 
 router.put("/admin/subscription", async function(req, res) {
-  const oauth = await req.context.storage.oauth.getByUserId(req.context.session.userId);
+  const oauth = await req.context.storage.oauth.getByUserId(req.context.session.adminUserId);
   const errorMessage = await paddle.changeSubscriptionPlan(oauth.subscriptionId, req.body.subscriptionPlanId);
 
   if (errorMessage) {
@@ -161,7 +168,7 @@ router.put("/admin/subscription", async function(req, res) {
 });
 
 router.delete("/admin/subscription", async function(req, res) {
-  const oauth = await req.context.storage.oauth.getByUserId(req.context.session.userId);
+  const oauth = await req.context.storage.oauth.getByUserId(req.context.session.adminUserId);
   const errorMessage = await paddle.cancelSubscription(oauth.subscriptionId);
 
   if (errorMessage) {
