@@ -4,6 +4,7 @@
 focused on simplicity. Works both in Cloud and On-Premises.
 
 ![Tablet with roombelt installed](https://roombelt.com/img/tablet.png)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Froombelt%2Froombelt.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Froombelt%2Froombelt?ref=badge_shield)
 
 ## Installation
 
@@ -23,3 +24,6 @@ or contact me using the chat widget on [roombelt.com](https://roombelt.com).
 
 Cross-browser testing provided by: <br><br>
 <a href="http://browserstack.com"><img height="50" src="https://roombelt.com/img/browserstack-logo.svg" alt="BrowserStack"></a>
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Froombelt%2Froombelt.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Froombelt%2Froombelt?ref=badge_large)
